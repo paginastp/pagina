@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor de Imágenes con Zoom</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .image-viewer {
+            width: 95%;
+            max-width: 1400px;
+            margin: 20px auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .image-container {
+            position: relative;
+            width: 100%;
+            height: 80vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+            overflow: hidden;
+            cursor: zoom-in;
+        }
+        .image-container.zoomed {
+            cursor: grab;
+        }
+        .image-container.zoomed:active {
+            cursor: grabbing;
+        }
+        .image-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.1s ease;
+        }
+        .image-wrapper img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.1s ease;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            background-color: #f8f8f8;
+            border-top: 1px solid #ddd;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            margin: 0 10px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .counter {
+            display: flex;
+            align-items: center;
+            margin: 0 15px;
+            font-size: 16px;
+        }
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            margin-left: 20px;
+        }
+        .zoom-level {
+            margin: 0 10px;
+            font-size: 16px;
+            min-width: 60px;
+            text-align: center;
+        }
+        h1 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .instructions {
+            margin-top: 5px;
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>ESPECIALISTAS EN AP</h1>
+    <p class="instructions">Haz clic para ampliar. Arrastra para mover. Usa la rueda del ratón para cambiar el nivel de zoom.</p>
+    
+    <div class="image-viewer">
+        <div id="imageContainer" class="image-container">
+            <div id="imageWrapper" class="image-wrapper">
+                <img id="currentImage" src="" alt="Imagen actual">
+            </div>
+        </div>
+        <div class="controls">
+            <button id="prevBtn" onclick="prevImage()">Anterior</button>
+            <div class="counter">
+                <span id="currentIndex">0</span>/<span id="totalImages">0</span>
+            </div>
+            <button id="nextBtn" onclick="nextImage()">Siguiente</button>
+            
+            <div class="zoom-controls">
+                <button id="zoomOutBtn" onclick="zoomOut()">-</button>
+                <div class="zoom-level">
+                    <span id="zoomLevel">100%</span>
+                </div>
+                <button id="zoomInBtn" onclick="zoomIn()">+</button>
+                <button id="resetZoomBtn" onclick="resetZoom()">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array con las URLs de tus imágenes
+        const images = [
+            "https://lh3.googleusercontent.com/d/1EyWBHjhO-GvktfdD46DInsgUw0HIuWr4",
+            "https://lh3.googleusercontent.com/d/10BrjGBQ_TllUbk2Oib2K2g4pGOqVxq-s",
+        ];
+        
+        let currentIndex = 0;
+        let scale = 1;
+        let isDragging = false;
+        let startPos = { x: 0, y: 0 };
+        let currentPos = { x: 0, y: 0 };
+        let isZoomed = false;
+        
+        const imageElement = document.getElementById('currentImage');
+        const imageContainer = document.getElementById('imageContainer');
+        const imageWrapper = document.getElementById('imageWrapper');
+        const currentIndexElement = document.getElementById('currentIndex');
+        const totalImagesElement = document.getElementById('totalImages');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const zoomLevelElement = document.getElementById('zoomLevel');
+        
+        // Inicialización
+        function initialize() {
+            totalImagesElement.textContent = images.length;
+            showImage(currentIndex);
+            updateButtons();
+            setupZoomEvents();
+        }
+        
+        // Mostrar la imagen actual
+        function showImage(index) {
+            imageElement.src = images[index];
+            currentIndexElement.textContent = index + 1;
+            resetZoom();
+            updateButtons();
+        }
+        
+        // Actualizar estado de los botones
+        function updateButtons() {
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = currentIndex === images.length - 1;
+        }
+        
+        // Ir a la imagen anterior
+        function prevImage() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                showImage(currentIndex);
+            }
+        }
+        
+        // Ir a la siguiente imagen
+        function nextImage() {
+            if (currentIndex < images.length - 1) {
+                currentIndex++;
+                showImage(currentIndex);
+            }
+        }
+        
+        // Configurar eventos de zoom
+        function setupZoomEvents() {
+            // Evento de clic para activar/desactivar zoom
+            imageContainer.addEventListener('click', function(e) {
+                if (!isZoomed) {
+                    // Si no está ampliado, hacer zoom donde se hizo clic
+                    zoomAt(e.clientX, e.clientY, 2);
+                }
+            });
+            
+            // Eventos para arrastrar la imagen
+            imageContainer.addEventListener('mousedown', function(e) {
+                if (scale > 1) {
+                    isDragging = true;
+                    startPos = {
+                        x: e.clientX - currentPos.x,
+                        y: e.clientY - currentPos.y
+                    };
+                    imageContainer.classList.add('zoomed');
+                }
+            });
+            
+            document.addEventListener('mousemove', function(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentPos = {
+                        x: e.clientX - startPos.x,
+                        y: e.clientY - startPos.y
+                    };
+                    updateImagePosition();
+                }
+            });
+            
+            document.addEventListener('mouseup', function() {
+                isDragging = false;
+            });
+            
+            // Zoom con rueda del ratón
+            imageContainer.addEventListener('wheel', function(e) {
+                e.preventDefault();
+                
+                const rect = imageContainer.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                if (e.deltaY < 0) {
+                    // Zoom in
+                    zoomAt(e.clientX, e.clientY, scale * 1.1);
+                } else {
+                    // Zoom out
+                    zoomAt(e.clientX, e.clientY, scale / 1.1);
+                }
+            });
+            
+            // Evento para actualizar la posición cuando cambia el tamaño de la ventana
+            window.addEventListener('resize', updateImagePosition);
+            
+            // Eventos táctiles para dispositivos móviles
+            imageContainer.addEventListener('touchstart', function(e) {
+                if (scale > 1 && e.touches.length === 1) {
+                    isDragging = true;
+                    startPos = {
+                        x: e.touches[0].clientX - currentPos.x,
+                        y: e.touches[0].clientY - currentPos.y
+                    };
+                }
+            }, { passive: false });
+            
+            imageContainer.addEventListener('touchmove', function(e) {
+                if (isDragging && e.touches.length === 1) {
+                    e.preventDefault();
+                    currentPos = {
+                        x: e.touches[0].clientX - startPos.x,
+                        y: e.touches[0].clientY - startPos.y
+                    };
+                    updateImagePosition();
+                }
+            }, { passive: false });
+            
+            imageContainer.addEventListener('touchend', function() {
+                isDragging = false;
+            });
+        }
+        
+        // Función para hacer zoom en un punto específico
+        function zoomAt(clientX, clientY, newScale) {
+            // Limitar el zoom entre 1x y 5x
+            newScale = Math.max(1, Math.min(5, newScale));
+            
+            if (newScale === 1) {
+                resetZoom();
+                return;
+            }
+            
+            const rect = imageContainer.getBoundingClientRect();
+            const mouseX = clientX - rect.left;
+            const mouseY = clientY - rect.top;
+            
+            // Calcular el porcentaje de la posición del mouse en relación con el contenedor
+            const percentX = mouseX / rect.width;
+            const percentY = mouseY / rect.height;
+            
+            // Aplicar el nuevo zoom
+            scale = newScale;
+            isZoomed = scale > 1;
+            
+            // Actualizar la transformación
+            imageElement.style.transform = `scale(${scale})`;
+            
+            // Si está haciendo zoom, centrar en el punto donde se hizo clic
+            if (isZoomed) {
+                imageContainer.classList.add('zoomed');
+                
+                // Calcular la nueva posición
+                const scaledWidth = rect.width * scale;
+                const scaledHeight = rect.height * scale;
+                
+                const maxX = (scaledWidth - rect.width) / 2;
+                const maxY = (scaledHeight - rect.height) / 2;
+                
+                // Ajustar la posición para centrar en el punto donde se hizo clic
+                const offsetX = (percentX - 0.5) * (scaledWidth - rect.width);
+                const offsetY = (percentY - 0.5) * (scaledHeight - rect.height);
+                
+                // Limitar la posición dentro de los límites
+                currentPos.x = Math.max(-maxX, Math.min(maxX, -offsetX));
+                currentPos.y = Math.max(-maxY, Math.min(maxY, -offsetY));
+            } else {
+                imageContainer.classList.remove('zoomed');
+                currentPos = { x: 0, y: 0 };
+            }
+            
+            updateImagePosition();
+            updateZoomLevel();
+        }
+        
+        // Actualizar la posición de la imagen
+        function updateImagePosition() {
+            imageWrapper.style.transform = `translate(${currentPos.x}px, ${currentPos.y}px)`;
+        }
+        
+        // Actualizar indicador de nivel de zoom
+        function updateZoomLevel() {
+            zoomLevelElement.textContent = `${Math.round(scale * 100)}%`;
+        }
+        
+        // Funciones para botones de zoom
+        function zoomIn() {
+            const rect = imageContainer.getBoundingClientRect();
+            zoomAt(
+                rect.left + rect.width / 2,
+                rect.top + rect.height / 2,
+                scale * 1.5
+            );
+        }
+        
+        function zoomOut() {
+            const rect = imageContainer.getBoundingClientRect();
+            zoomAt(
+                rect.left + rect.width / 2,
+                rect.top + rect.height / 2,
+                scale / 1.5
+            );
+        }
+        
+        function resetZoom() {
+            scale = 1;
+            isZoomed = false;
+            currentPos = { x: 0, y: 0 };
+            imageElement.style.transform = '';
+            imageWrapper.style.transform = '';
+            imageContainer.classList.remove('zoomed');
+            updateZoomLevel();
+        }
+        
+        // Agregar navegación con teclado
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowLeft') {
+                prevImage();
+            } else if (event.key === 'ArrowRight') {
+                nextImage();
+            } else if (event.key === '+') {
+                zoomIn();
+            } else if (event.key === '-') {
+                zoomOut();
+            } else if (event.key === '0') {
+                resetZoom();
+            }
+        });
+        
+        // Iniciar el visor
+        window.onload = initialize;
+    </script>
+</body>
+</html>
