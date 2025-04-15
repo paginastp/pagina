@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor de Imágenes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .image-viewer {
+            width: 80%;
+            max-width: 1000px;
+            margin: 20px auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .image-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+        }
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            padding: 15px;
+            background-color: #f8f8f8;
+            border-top: 1px solid #ddd;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            margin: 0 10px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .counter {
+            display: flex;
+            align-items: center;
+            margin: 0 15px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Visor de Imágenes</h1>
+    
+    <div class="image-viewer">
+        <div class="image-container">
+            <img id="currentImage" src="" alt="Imagen actual">
+        </div>
+        <div class="controls">
+            <button id="prevBtn" onclick="prevImage()">Anterior</button>
+            <div class="counter">
+                <span id="currentIndex">0</span>/<span id="totalImages">0</span>
+            </div>
+            <button id="nextBtn" onclick="nextImage()">Siguiente</button>
+        </div>
+    </div>
+
+    <script>
+        // Array con las URLs de tus imágenes
+        const images = [
+            "https://lh3.googleusercontent.com/d/1acu0EHwkThMZpd6M5ZK1RQ33dicDBFem",
+            "https://lh3.googleusercontent.com/d/1V9piIySw0bB_aiGgnHE5n27p-2cCXsFo",
+            "https://lh3.googleusercontent.com/d/1t4iydB-dYhaMvpEzb9xDXfO3F59kufSx",
+            "https://lh3.googleusercontent.com/d/13ldqyEAN-wRhbHOHeR6G0SZjrd-NUWmq",
+            "https://lh3.googleusercontent.com/d/1_IGzKBM_D5mtSekCe8gJ_5RBG-zGMOGF"
+        ];
+        
+        let currentIndex = 0;
+        const imageElement = document.getElementById('currentImage');
+        const currentIndexElement = document.getElementById('currentIndex');
+        const totalImagesElement = document.getElementById('totalImages');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        
+        // Inicialización
+        function initialize() {
+            totalImagesElement.textContent = images.length;
+            showImage(currentIndex);
+            updateButtons();
+        }
+        
+        // Mostrar la imagen actual
+        function showImage(index) {
+            imageElement.src = images[index];
+            currentIndexElement.textContent = index + 1;
+            updateButtons();
+        }
+        
+        // Actualizar estado de los botones
+        function updateButtons() {
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = currentIndex === images.length - 1;
+        }
+        
+        // Ir a la imagen anterior
+        function prevImage() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                showImage(currentIndex);
+            }
+        }
+        
+        // Ir a la siguiente imagen
+        function nextImage() {
+            if (currentIndex < images.length - 1) {
+                currentIndex++;
+                showImage(currentIndex);
+            }
+        }
+        
+        // Iniciar el visor
+        window.onload = initialize;
+    </script>
+</body>
+</html>
