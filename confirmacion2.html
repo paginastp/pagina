@@ -23,6 +23,38 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             overflow: hidden;
+            display: flex;
+        }
+        .sidebar {
+            width: 150px;
+            background-color: #f8f8f8;
+            border-right: 1px solid #ddd;
+            padding: 10px;
+            overflow-y: auto;
+            max-height: 80vh;
+        }
+        .image-button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+        }
+        .image-button:hover {
+            background-color: #d0d0d0;
+        }
+        .image-button.active {
+            background-color: #4285f4;
+            color: white;
+        }
+        .viewer-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
         .image-container {
             position: relative;
@@ -108,6 +140,13 @@
             font-size: 14px;
             text-align: center;
         }
+        .thumbnail {
+            width: 100%;
+            height: 60px;
+            object-fit: cover;
+            margin-bottom: 5px;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
@@ -115,25 +154,27 @@
     <p class="instructions">Haz clic para ampliar. Arrastra para mover. Usa la rueda del ratón para cambiar el nivel de zoom.</p>
     
     <div class="image-viewer">
-        <div id="imageContainer" class="image-container">
-            <div id="imageWrapper" class="image-wrapper">
-                <img id="currentImage" src="" alt="Imagen actual">
-            </div>
+        <div class="sidebar" id="imageSidebar">
+            <!-- Los botones de imagen se generarán con JavaScript -->
         </div>
-        <div class="controls">
-            <button id="prevBtn" onclick="prevImage()">Anterior</button>
-            <div class="counter">
-                <span id="currentIndex">0</span>/<span id="totalImages">0</span>
-            </div>
-            <button id="nextBtn" onclick="nextImage()">Siguiente</button>
-            
-            <div class="zoom-controls">
-                <button id="zoomOutBtn" onclick="zoomOut()">-</button>
-                <div class="zoom-level">
-                    <span id="zoomLevel">100%</span>
+        <div class="viewer-content">
+            <div id="imageContainer" class="image-container">
+                <div id="imageWrapper" class="image-wrapper">
+                    <img id="currentImage" src="" alt="Imagen actual">
                 </div>
-                <button id="zoomInBtn" onclick="zoomIn()">+</button>
-                <button id="resetZoomBtn" onclick="resetZoom()">Reset</button>
+            </div>
+            <div class="controls">
+                <div class="counter">
+                    <span id="currentIndex">0</span>/<span id="totalImages">0</span>
+                </div>
+                <div class="zoom-controls">
+                    <button id="zoomOutBtn" onclick="zoomOut()">-</button>
+                    <div class="zoom-level">
+                        <span id="zoomLevel">100%</span>
+                    </div>
+                    <button id="zoomInBtn" onclick="zoomIn()">+</button>
+                    <button id="resetZoomBtn" onclick="resetZoom()">Reset</button>
+                </div>
             </div>
         </div>
     </div>
@@ -160,16 +201,50 @@
         const imageWrapper = document.getElementById('imageWrapper');
         const currentIndexElement = document.getElementById('currentIndex');
         const totalImagesElement = document.getElementById('totalImages');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
+        const imageSidebar = document.getElementById('imageSidebar');
         const zoomLevelElement = document.getElementById('zoomLevel');
         
         // Inicialización
         function initialize() {
             totalImagesElement.textContent = images.length;
+            generateImageButtons();
             showImage(currentIndex);
-            updateButtons();
             setupZoomEvents();
+        }
+        
+        // Generar botones para cada imagen
+        function generateImageButtons() {
+            images.forEach((imageUrl, index) => {
+                const button = document.createElement('div');
+                button.className = 'image-button' + (index === currentIndex ? ' active' : '');
+                button.onclick = () => selectImage(index);
+                button.setAttribute('data-index', index);
+                
+                // Crear miniatura
+                const thumbnail = document.createElement('img');
+                thumbnail.src = imageUrl;
+                thumbnail.className = 'thumbnail';
+                thumbnail.alt = `Miniatura ${index + 1}`;
+                
+                const label = document.createElement('div');
+                label.textContent = `Imagen ${index + 1}`;
+                
+                button.appendChild(thumbnail);
+                button.appendChild(label);
+                imageSidebar.appendChild(button);
+            });
+        }
+        
+        // Seleccionar una imagen específica
+        function selectImage(index) {
+            currentIndex = index;
+            showImage(currentIndex);
+            
+            // Actualizar botones activos
+            document.querySelectorAll('.image-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.image-button[data-index="${index}"]`).classList.add('active');
         }
         
         // Mostrar la imagen actual
@@ -177,29 +252,6 @@
             imageElement.src = images[index];
             currentIndexElement.textContent = index + 1;
             resetZoom();
-            updateButtons();
-        }
-        
-        // Actualizar estado de los botones
-        function updateButtons() {
-            prevBtn.disabled = currentIndex === 0;
-            nextBtn.disabled = currentIndex === images.length - 1;
-        }
-        
-        // Ir a la imagen anterior
-        function prevImage() {
-            if (currentIndex > 0) {
-                currentIndex--;
-                showImage(currentIndex);
-            }
-        }
-        
-        // Ir a la siguiente imagen
-        function nextImage() {
-            if (currentIndex < images.length - 1) {
-                currentIndex++;
-                showImage(currentIndex);
-            }
         }
         
         // Configurar eventos de zoom
@@ -380,9 +432,13 @@
         // Agregar navegación con teclado
         document.addEventListener('keydown', function(event) {
             if (event.key === 'ArrowLeft') {
-                prevImage();
+                if (currentIndex > 0) {
+                    selectImage(currentIndex - 1);
+                }
             } else if (event.key === 'ArrowRight') {
-                nextImage();
+                if (currentIndex < images.length - 1) {
+                    selectImage(currentIndex + 1);
+                }
             } else if (event.key === '+') {
                 zoomIn();
             } else if (event.key === '-') {
