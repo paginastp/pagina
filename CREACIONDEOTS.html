@@ -32,6 +32,7 @@
             padding: 10px;
             overflow-y: auto;
             max-height: 80vh;
+            flex-shrink: 0;
         }
         .pdf-button {
             width: 100%;
@@ -55,22 +56,23 @@
             flex-grow: 1;
             display: flex;
             flex-direction: column;
+            position: relative;
         }
         .pdf-container {
             position: relative;
             width: 100%;
             height: 80vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             background-color: #f5f5f5;
-            overflow: hidden;
+            overflow: auto; /* Cambiado a auto para permitir desplazamiento */
         }
         .pdf-wrapper {
             position: relative;
-            width: 100%;
-            height: 100%;
-            transition: transform 0.3s ease;
+            min-width: 100%;
+            min-height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            transform-origin: center top;
         }
         .pdf-embed {
             width: 100%;
@@ -154,7 +156,7 @@
         <div class="viewer-content">
             <div id="pdfContainer" class="pdf-container">
                 <div id="pdfWrapper" class="pdf-wrapper">
-                    <!-- Cambiamos a iframe para mejor compatibilidad con zoom -->
+                    <!-- Usamos iframe para permitir mejor control del PDF -->
                     <iframe id="pdfFrame" class="pdf-embed" src="" frameborder="0" allowfullscreen></iframe>
                 </div>
             </div>
@@ -190,6 +192,7 @@
         
         const pdfFrame = document.getElementById('pdfFrame');
         const pdfWrapper = document.getElementById('pdfWrapper');
+        const pdfContainer = document.getElementById('pdfContainer');
         const currentIndexElement = document.getElementById('currentIndex');
         const totalPdfsElement = document.getElementById('totalPdfs');
         const pdfSidebar = document.getElementById('pdfSidebar');
@@ -205,11 +208,30 @@
             pdfContainer.addEventListener('wheel', function(e) {
                 if (e.ctrlKey) {
                     e.preventDefault();
+                    
+                    // Guardar la posición de desplazamiento antes del zoom
+                    const scrollLeft = pdfContainer.scrollLeft;
+                    const scrollTop = pdfContainer.scrollTop;
+                    
+                    // Calcular la posición relativa del cursor
+                    const rect = pdfContainer.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    const oldScale = scale;
+                    
                     if (e.deltaY < 0) {
-                        zoomIn();
+                        if (scale < maxScale) scale += scaleStep;
                     } else {
-                        zoomOut();
+                        if (scale > minScale) scale -= scaleStep;
                     }
+                    
+                    updateZoom();
+                    
+                    // Ajustar la posición de desplazamiento según el cambio de escala
+                    const scaleChange = scale / oldScale;
+                    pdfContainer.scrollLeft = x * (scaleChange - 1) + scrollLeft * scaleChange;
+                    pdfContainer.scrollTop = y * (scaleChange - 1) + scrollTop * scaleChange;
                 }
             }, { passive: false });
         }
@@ -254,40 +276,68 @@
         // Mostrar el PDF actual
         function showPdf(index) {
             const pdfUrl = pdfs[index];
-            // Usar #view=FitH para que el PDF se ajuste al ancho
-            pdfFrame.src = pdfUrl + '#view=FitH';
+            // Usar parámetros para mejor visualización y centrarlo
+            pdfFrame.src = pdfUrl + '#view=FitH&scrollbar=1&toolbar=1&navpanes=0';
             currentIndexElement.textContent = index + 1;
         }
         
         // Funciones de zoom
         function zoomIn() {
             if (scale < maxScale) {
+                // Guardar posición de desplazamiento
+                const scrollLeft = pdfContainer.scrollLeft;
+                const scrollTop = pdfContainer.scrollTop;
+                
+                const oldScale = scale;
                 scale += scaleStep;
+                
                 updateZoom();
+                
+                // Ajustar posición después del zoom
+                const scaleChange = scale / oldScale;
+                pdfContainer.scrollLeft = scrollLeft * scaleChange;
+                pdfContainer.scrollTop = scrollTop * scaleChange;
             }
         }
         
         function zoomOut() {
             if (scale > minScale) {
+                // Guardar posición de desplazamiento
+                const scrollLeft = pdfContainer.scrollLeft;
+                const scrollTop = pdfContainer.scrollTop;
+                
+                const oldScale = scale;
                 scale -= scaleStep;
+                
                 updateZoom();
+                
+                // Ajustar posición después del zoom
+                const scaleChange = scale / oldScale;
+                pdfContainer.scrollLeft = scrollLeft * scaleChange;
+                pdfContainer.scrollTop = scrollTop * scaleChange;
             }
         }
         
         function resetZoom() {
             scale = 1.0;
             updateZoom();
+            // Restablecer posición de desplazamiento
+            pdfContainer.scrollLeft = 0;
+            pdfContainer.scrollTop = 0;
         }
         
         function updateZoom() {
+            // Aplicar transformación centrada
             pdfWrapper.style.transform = `scale(${scale})`;
             zoomLevelElement.textContent = `${Math.round(scale * 100)}%`;
             
-            // Ajustar el origen de la transformación para un zoom más natural
-            if (scale !== 1) {
-                pdfWrapper.style.transformOrigin = 'center center';
+            // Importante: ajustar el ancho y altura para que el contenedor pueda desplazarse correctamente
+            if (scale > 1) {
+                pdfWrapper.style.width = `${100 * scale}%`;
+                pdfWrapper.style.height = `${100 * scale}%`;
             } else {
-                pdfWrapper.style.transformOrigin = 'center top';
+                pdfWrapper.style.width = '100%';
+                pdfWrapper.style.height = '100%';
             }
         }
         
