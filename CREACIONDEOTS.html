@@ -63,16 +63,7 @@
             width: 100%;
             height: 80vh;
             background-color: #f5f5f5;
-            overflow: auto; /* Cambiado a auto para permitir desplazamiento */
-        }
-        .pdf-wrapper {
-            position: relative;
-            min-width: 100%;
-            min-height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            transform-origin: center top;
+            overflow: auto;
         }
         .pdf-embed {
             width: 100%;
@@ -155,10 +146,7 @@
         </div>
         <div class="viewer-content">
             <div id="pdfContainer" class="pdf-container">
-                <div id="pdfWrapper" class="pdf-wrapper">
-                    <!-- Usamos iframe para permitir mejor control del PDF -->
-                    <iframe id="pdfFrame" class="pdf-embed" src="" frameborder="0" allowfullscreen></iframe>
-                </div>
+                <iframe id="pdfFrame" class="pdf-embed" src="" frameborder="0" allowfullscreen></iframe>
             </div>
             <div class="controls">
                 <div class="counter">
@@ -178,10 +166,21 @@
     </div>
 
     <script>
+        // Función para convertir URL de Google Drive a formato de visualización directa
+        function getDirectViewerUrl(driveUrl) {
+            // Extraer el ID del archivo de la URL de Google Drive
+            const match = driveUrl.match(/[-\w]{25,}/);
+            if (match && match[0]) {
+                const fileId = match[0];
+                // Crear URL directa para visualización
+                return `https://drive.google.com/file/d/${fileId}/preview`;
+            }
+            return driveUrl;
+        }
+        
         // Array con las URLs de tus PDFs
         const pdfs = [
-            "https://lh3.googleusercontent.com/d/1RCYv8EK78m03dY4e5Ey7IxgOO5i2ijOR",
-            // Agrega más URLs de PDF según sea necesario
+            getDirectViewerUrl("https://drive.google.com/file/d/1m7Bgg7rW3il7_ZwXvwIXTH5zNBpxTknG/view?usp=drive_link")
         ];
         
         let currentIndex = 0;
@@ -191,7 +190,6 @@
         const minScale = 0.5;
         
         const pdfFrame = document.getElementById('pdfFrame');
-        const pdfWrapper = document.getElementById('pdfWrapper');
         const pdfContainer = document.getElementById('pdfContainer');
         const currentIndexElement = document.getElementById('currentIndex');
         const totalPdfsElement = document.getElementById('totalPdfs');
@@ -203,37 +201,6 @@
             totalPdfsElement.textContent = pdfs.length;
             generatePdfButtons();
             showPdf(currentIndex);
-            
-            // Agregar evento de rueda del ratón para zoom
-            pdfContainer.addEventListener('wheel', function(e) {
-                if (e.ctrlKey) {
-                    e.preventDefault();
-                    
-                    // Guardar la posición de desplazamiento antes del zoom
-                    const scrollLeft = pdfContainer.scrollLeft;
-                    const scrollTop = pdfContainer.scrollTop;
-                    
-                    // Calcular la posición relativa del cursor
-                    const rect = pdfContainer.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    
-                    const oldScale = scale;
-                    
-                    if (e.deltaY < 0) {
-                        if (scale < maxScale) scale += scaleStep;
-                    } else {
-                        if (scale > minScale) scale -= scaleStep;
-                    }
-                    
-                    updateZoom();
-                    
-                    // Ajustar la posición de desplazamiento según el cambio de escala
-                    const scaleChange = scale / oldScale;
-                    pdfContainer.scrollLeft = x * (scaleChange - 1) + scrollLeft * scaleChange;
-                    pdfContainer.scrollTop = y * (scaleChange - 1) + scrollTop * scaleChange;
-                }
-            }, { passive: false });
         }
         
         // Generar botones para cada PDF
@@ -276,74 +243,51 @@
         // Mostrar el PDF actual
         function showPdf(index) {
             const pdfUrl = pdfs[index];
-            // Usar parámetros para mejor visualización y centrarlo
-            pdfFrame.src = pdfUrl + '#view=FitH&scrollbar=1&toolbar=1&navpanes=0';
+            pdfFrame.src = pdfUrl;
             currentIndexElement.textContent = index + 1;
         }
         
         // Funciones de zoom
         function zoomIn() {
             if (scale < maxScale) {
-                // Guardar posición de desplazamiento
-                const scrollLeft = pdfContainer.scrollLeft;
-                const scrollTop = pdfContainer.scrollTop;
-                
-                const oldScale = scale;
                 scale += scaleStep;
-                
                 updateZoom();
-                
-                // Ajustar posición después del zoom
-                const scaleChange = scale / oldScale;
-                pdfContainer.scrollLeft = scrollLeft * scaleChange;
-                pdfContainer.scrollTop = scrollTop * scaleChange;
             }
         }
         
         function zoomOut() {
             if (scale > minScale) {
-                // Guardar posición de desplazamiento
-                const scrollLeft = pdfContainer.scrollLeft;
-                const scrollTop = pdfContainer.scrollTop;
-                
-                const oldScale = scale;
                 scale -= scaleStep;
-                
                 updateZoom();
-                
-                // Ajustar posición después del zoom
-                const scaleChange = scale / oldScale;
-                pdfContainer.scrollLeft = scrollLeft * scaleChange;
-                pdfContainer.scrollTop = scrollTop * scaleChange;
             }
         }
         
         function resetZoom() {
             scale = 1.0;
             updateZoom();
-            // Restablecer posición de desplazamiento
-            pdfContainer.scrollLeft = 0;
-            pdfContainer.scrollTop = 0;
         }
         
         function updateZoom() {
-            // Aplicar transformación centrada
-            pdfWrapper.style.transform = `scale(${scale})`;
-            zoomLevelElement.textContent = `${Math.round(scale * 100)}%`;
+            // Usar CSS transforms para escalar el iframe
+            pdfFrame.style.transform = `scale(${scale})`;
+            pdfFrame.style.transformOrigin = "top left";
             
-            // Importante: ajustar el ancho y altura para que el contenedor pueda desplazarse correctamente
+            // Ajustar dimensiones para el scroll correcto
             if (scale > 1) {
-                pdfWrapper.style.width = `${100 * scale}%`;
-                pdfWrapper.style.height = `${100 * scale}%`;
+                pdfFrame.style.width = `${100/scale}%`;
+                pdfFrame.style.height = `${100/scale}%`;
             } else {
-                pdfWrapper.style.width = '100%';
-                pdfWrapper.style.height = '100%';
+                pdfFrame.style.width = "100%";
+                pdfFrame.style.height = "100%";
             }
+            
+            zoomLevelElement.textContent = `${Math.round(scale * 100)}%`;
         }
         
         // Abrir PDF en una nueva pestaña
         function openExternalPdf() {
-            window.open(pdfs[currentIndex], '_blank');
+            const originalUrl = "https://drive.google.com/file/d/1m7Bgg7rW3il7_ZwXvwIXTH5zNBpxTknG/view?usp=drive_link";
+            window.open(originalUrl, '_blank');
         }
         
         // Agregar navegación con teclado
