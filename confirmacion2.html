@@ -140,13 +140,6 @@
             font-size: 14px;
             text-align: center;
         }
-        .thumbnail {
-            width: 100%;
-            height: 60px;
-            object-fit: cover;
-            margin-bottom: 5px;
-            border-radius: 3px;
-        }
     </style>
 </head>
 <body>
@@ -215,22 +208,12 @@
         // Generar botones para cada imagen
         function generateImageButtons() {
             images.forEach((imageUrl, index) => {
-                const button = document.createElement('div');
+                const button = document.createElement('button');
                 button.className = 'image-button' + (index === currentIndex ? ' active' : '');
                 button.onclick = () => selectImage(index);
                 button.setAttribute('data-index', index);
+                button.textContent = `Imagen de Alerta ${index + 1}`;
                 
-                // Crear miniatura
-                const thumbnail = document.createElement('img');
-                thumbnail.src = imageUrl;
-                thumbnail.className = 'thumbnail';
-                thumbnail.alt = `Miniatura ${index + 1}`;
-                
-                const label = document.createElement('div');
-                label.textContent = `Imagen de Alerta ${index + 1}`;
-                
-                button.appendChild(thumbnail);
-                button.appendChild(label);
                 imageSidebar.appendChild(button);
             });
         }
