@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESPECIALISTAS EN AP</title>
+    <title>CONFIRMACION</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -140,17 +140,10 @@
             font-size: 14px;
             text-align: center;
         }
-        .thumbnail {
-            width: 100%;
-            height: 60px;
-            object-fit: cover;
-            margin-bottom: 5px;
-            border-radius: 3px;
-        }
     </style>
 </head>
 <body>
-    <h1>    ESPECIALISTAS EN AP</h1>
+    <h1>ESPECIALISTAS EN AP</h1>
     <p class="instructions">Haz clic para ampliar. Arrastra para mover. Usa la rueda del ratón para cambiar el nivel de zoom.</p>
     
     <div class="image-viewer">
@@ -183,7 +176,8 @@
         // Array con las URLs de tus imágenes
         const images = [
             "https://lh3.googleusercontent.com/d/1EyWBHjhO-GvktfdD46DInsgUw0HIuWr4",
-            "https://lh3.googleusercontent.com/d/10BrjGBQ_TllUbk2Oib2K2g4pGOqVxq-s",
+            "https://lh3.googleusercontent.com/d/10BrjGBQ_TllUbk2Oib2K2g4pGOqVxq",
+        
         ];
         
         let currentIndex = 0;
@@ -212,22 +206,12 @@
         // Generar botones para cada imagen
         function generateImageButtons() {
             images.forEach((imageUrl, index) => {
-                const button = document.createElement('div');
+                const button = document.createElement('button');
                 button.className = 'image-button' + (index === currentIndex ? ' active' : '');
                 button.onclick = () => selectImage(index);
                 button.setAttribute('data-index', index);
+                button.textContent = `Imagen de Alerta ${index + 1}`;
                 
-                // Crear miniatura
-                const thumbnail = document.createElement('img');
-                thumbnail.src = imageUrl;
-                thumbnail.className = 'thumbnail';
-                thumbnail.alt = `Miniatura ${index + 1}`;
-                
-                const label = document.createElement('div');
-                label.textContent = `Imagen de Alerta ${index + 1}`;
-                
-                button.appendChild(thumbnail);
-                button.appendChild(label);
                 imageSidebar.appendChild(button);
             });
         }
