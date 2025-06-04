@@ -26,7 +26,7 @@
             display: flex;
         }
         .sidebar {
-            width: 200px;
+            width: 150px;
             background-color: #f8f8f8;
             border-right: 1px solid #ddd;
             padding: 10px;
@@ -41,7 +41,7 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            text-align: left;
+            text-align: center;
             font-size: 14px;
         }
         .image-button:hover {
@@ -140,19 +140,6 @@
             font-size: 14px;
             text-align: center;
         }
-        .thumbnail {
-            width: 100%;
-            height: 60px;
-            object-fit: cover;
-            margin-bottom: 5px;
-            border-radius: 3px;
-        }
-        .image-title {
-            font-weight: bold;
-            font-size: 18px;
-            margin: 10px 0;
-            text-align: center;
-        }
     </style>
 </head>
 <body>
@@ -164,7 +151,6 @@
             <!-- Los botones de imagen se generarán con JavaScript -->
         </div>
         <div class="viewer-content">
-            <div class="image-title" id="imageTitle"></div>
             <div id="imageContainer" class="image-container">
                 <div id="imageWrapper" class="image-wrapper">
                     <img id="currentImage" src="" alt="Imagen actual">
@@ -189,17 +175,7 @@
     <script>
         // Array con las URLs de tus imágenes
         const images = [
-            "https://lh3.googleusercontent.com/d/1U52itOPK9z-5ZlFiqho-SgtQbq1O-364",
-            // Agrega aquí las URLs de las demás imágenes
-        ];
-        
-        // Array con los nombres personalizados para cada imagen
-        const imageNames = [
-            "1.-Uso del campo \"cliente\" y coordinación nocturna",
-            "2.-Cambios en el proceso de confirmación",
-            "3.-Factibilidades de paquetizados",
-            "4.-Paquetes de MW",
-            "5.-¿QUÉ CLIENTES NO ATIENDE EMPRESARIAL?"
+            "https://lh3.googleusercontent.com/d/1CxCwgwlUaRlTNd9jQz3ObzZ5jzsvog0v"
         ];
         
         let currentIndex = 0;
@@ -216,11 +192,10 @@
         const totalImagesElement = document.getElementById('totalImages');
         const imageSidebar = document.getElementById('imageSidebar');
         const zoomLevelElement = document.getElementById('zoomLevel');
-        const imageTitleElement = document.getElementById('imageTitle');
         
         // Inicialización
         function initialize() {
-            totalImagesElement.textContent = Math.min(images.length, imageNames.length);
+            totalImagesElement.textContent = images.length;
             generateImageButtons();
             showImage(currentIndex);
             setupZoomEvents();
@@ -228,28 +203,15 @@
         
         // Generar botones para cada imagen
         function generateImageButtons() {
-            // Usar el número menor entre imágenes disponibles y nombres disponibles
-            const numImages = Math.min(images.length, imageNames.length);
-            
-            for (let index = 0; index < numImages; index++) {
-                const button = document.createElement('div');
+            images.forEach((imageUrl, index) => {
+                const button = document.createElement('button');
                 button.className = 'image-button' + (index === currentIndex ? ' active' : '');
                 button.onclick = () => selectImage(index);
                 button.setAttribute('data-index', index);
+                button.textContent = `Imagen de Alerta ${index + 1}`;
                 
-                // Crear miniatura
-                const thumbnail = document.createElement('img');
-                thumbnail.src = images[index];
-                thumbnail.className = 'thumbnail';
-                thumbnail.alt = `Miniatura ${imageNames[index]}`;
-                
-                const label = document.createElement('div');
-                label.textContent = imageNames[index];
-                
-                button.appendChild(thumbnail);
-                button.appendChild(label);
                 imageSidebar.appendChild(button);
-            }
+            });
         }
         
         // Seleccionar una imagen específica
@@ -268,7 +230,6 @@
         function showImage(index) {
             imageElement.src = images[index];
             currentIndexElement.textContent = index + 1;
-            imageTitleElement.textContent = imageNames[index];
             resetZoom();
         }
         
@@ -454,7 +415,7 @@
                     selectImage(currentIndex - 1);
                 }
             } else if (event.key === 'ArrowRight') {
-                if (currentIndex < Math.min(images.length, imageNames.length) - 1) {
+                if (currentIndex < images.length - 1) {
                     selectImage(currentIndex + 1);
                 }
             } else if (event.key === '+') {
