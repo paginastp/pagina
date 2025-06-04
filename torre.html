@@ -140,13 +140,6 @@
             font-size: 14px;
             text-align: center;
         }
-        .thumbnail {
-            width: 100%;
-            height: 60px;
-            object-fit: cover;
-            margin-bottom: 5px;
-            border-radius: 3px;
-        }
     </style>
 </head>
 <body>
@@ -182,8 +175,8 @@
     <script>
         // Array con las URLs de tus imágenes
         const images = [
-            "https://lh3.googleusercontent.com/d/1t4iydB-dYhaMvpEzb9xDXfO3F59kufSx",
-            "https://lh3.googleusercontent.com/d/1_IGzKBM_D5mtSekCe8gJ_5RBG-zGMOGF",
+            "https://lh3.googleusercontent.com/d/118pfBLUl3ApwT7cg388GN_S1Jvae65mZ",
+            "https://lh3.googleusercontent.com/d/1meC7wt5G5oRYUDOik_QGocBPpsKiZAWI",
         ];
         
         let currentIndex = 0;
@@ -212,22 +205,12 @@
         // Generar botones para cada imagen
         function generateImageButtons() {
             images.forEach((imageUrl, index) => {
-                const button = document.createElement('div');
+                const button = document.createElement('button');
                 button.className = 'image-button' + (index === currentIndex ? ' active' : '');
                 button.onclick = () => selectImage(index);
                 button.setAttribute('data-index', index);
+                button.textContent = `Imagen de Alerta ${index + 1}`;
                 
-                // Crear miniatura
-                const thumbnail = document.createElement('img');
-                thumbnail.src = imageUrl;
-                thumbnail.className = 'thumbnail';
-                thumbnail.alt = `Miniatura ${index + 1}`;
-                
-                const label = document.createElement('div');
-                label.textContent = `Imagen de Alerta ${index + 1}`;
-                
-                button.appendChild(thumbnail);
-                button.appendChild(label);
                 imageSidebar.appendChild(button);
             });
         }
