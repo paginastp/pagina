@@ -26,7 +26,7 @@
             display: flex;
         }
         .sidebar {
-            width: 150px;
+            width: 200px;
             background-color: #f8f8f8;
             border-right: 1px solid #ddd;
             padding: 10px;
@@ -35,14 +35,20 @@
         }
         .image-button {
             width: 100%;
-            padding: 10px;
+            padding: 12px 8px;
             margin-bottom: 10px;
             background-color: #e0e0e0;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            text-align: center;
-            font-size: 14px;
+            text-align: left;
+            font-size: 12px;
+            line-height: 1.3;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            word-wrap: break-word;
+            white-space: normal;
         }
         .image-button:hover {
             background-color: #d0d0d0;
@@ -173,9 +179,12 @@
     </div>
 
     <script>
-        // Array con las URLs de tus imágenes
+        // Array con las URLs de tus imágenes y sus nombres personalizados
         const images = [
-            "https://lh3.googleusercontent.com/d/1CxCwgwlUaRlTNd9jQz3ObzZ5jzsvog0v"
+            {
+                url: "https://lh3.googleusercontent.com/d/1CxCwgwlUaRlTNd9jQz3ObzZ5jzsvog0v",
+                name: "AP para BANAMEX"
+            }
         ];
         
         let currentIndex = 0;
@@ -203,12 +212,12 @@
         
         // Generar botones para cada imagen
         function generateImageButtons() {
-            images.forEach((imageUrl, index) => {
+            images.forEach((image, index) => {
                 const button = document.createElement('button');
                 button.className = 'image-button' + (index === currentIndex ? ' active' : '');
                 button.onclick = () => selectImage(index);
                 button.setAttribute('data-index', index);
-                button.textContent = `Imagen de Alerta ${index + 1}`;
+                button.textContent = `${index + 1}: ${image.name}`;
                 
                 imageSidebar.appendChild(button);
             });
@@ -228,7 +237,7 @@
         
         // Mostrar la imagen actual
         function showImage(index) {
-            imageElement.src = images[index];
+            imageElement.src = images[index].url;
             currentIndexElement.textContent = index + 1;
             resetZoom();
         }
