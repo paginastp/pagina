@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor Híbrido - PDFs e Imágenes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .viewer {
+            width: 95%;
+            max-width: 1400px;
+            margin: 20px auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+        }
+        .sidebar {
+            width: 220px;
+            background-color: #f8f8f8;
+            border-right: 1px solid #ddd;
+            padding: 10px;
+            overflow-y: auto;
+            max-height: 80vh;
+            flex-shrink: 0;
+        }
+        .category-header {
+            font-weight: bold;
+            color: #333;
+            margin: 15px 0 10px 0;
+            padding: 5px 0;
+            border-bottom: 2px solid #4285f4;
+            font-size: 14px;
+        }
+        .category-header:first-child {
+            margin-top: 5px;
+        }
+        .item-button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            background-color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 12px;
+            line-height: 1.3;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+        .item-button:hover {
+            background-color: #d0d0d0;
+        }
+        .item-button.active {
+            background-color: #4285f4;
+            color: white;
+        }
+        .pdf-icon, .img-icon {
+            width: 30px;
+            height: 20px;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+        .pdf-icon {
+            background-color: #d32f2f;
+        }
+        .img-icon {
+            background-color: #2e7d32;
+        }
+        .viewer-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .content-container {
+            position: relative;
+            width: 100%;
+            height: 80vh;
+            background-color: #f5f5f5;
+            overflow: hidden;
+        }
+        .pdf-container {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            display: none;
+        }
+        .pdf-embed {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .image-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+            overflow: hidden;
+            cursor: zoom-in;
+        }
+        .image-container.active {
+            display: flex;
+        }
+        .image-container.zoomed {
+            cursor: grab;
+        }
+        .image-container.zoomed:active {
+            cursor: grabbing;
+        }
+        .image-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.1s ease;
+        }
+        .image-wrapper img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.1s ease;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            background-color: #f8f8f8;
+            border-top: 1px solid #ddd;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .counter {
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+        }
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .zoom-level {
+            font-size: 16px;
+            min-width: 60px;
+            text-align: center;
+        }
+        h1 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .instructions {
+            margin-top: 5px;
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+            max-width: 800px;
+        }
+        .current-type {
+            color: #4285f4;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Visor Híbrido - Documentos y Confirmaciones</h1>
+    <p class="instructions">
+        Selecciona documentos PDF o imágenes desde el menú lateral. 
+        Para imágenes: haz clic para ampliar, arrastra para mover, usa la rueda del ratón para zoom. 
+        Para PDFs: usa los controles de zoom. Si un PDF no se visualiza, espera un momento mientras carga.
+    </p>
+    
+    <div class="viewer">
+        <div class="sidebar" id="sidebar">
+            <!-- El contenido se generará con JavaScript -->
+        </div>
+        <div class="viewer-content">
+            <div id="contentContainer" class="content-container">
+                <!-- Contenedor para PDFs -->
+                <div id="pdfContainer" class="pdf-container">
+                    <iframe id="pdfFrame" class="pdf-embed" src="" frameborder="0" allowfullscreen></iframe>
+                </div>
+                
+                <!-- Contenedor para imágenes -->
+                <div id="imageContainer" class="image-container">
+                    <div id="imageWrapper" class="image-wrapper">
+                        <img id="currentImage" src="" alt="Imagen actual">
+                    </div>
+                </div>
+            </div>
+            <div class="controls">
+                <div class="current-type" id="currentType">Selecciona un elemento</div>
+                <div class="counter">
+                    <span id="currentIndex">0</span>/<span id="totalItems">0</span>
+                </div>
+                <div class="zoom-controls">
+                    <button id="zoomOutBtn" onclick="zoomOut()">-</button>
+                    <div class="zoom-level">
+                        <span id="zoomLevel">100%</span>
+                    </div>
+                    <button id="zoomInBtn" onclick="zoomIn()">+</button>
+                    <button id="resetZoomBtn" onclick="resetZoom()">Reset</button>
+                </div>
+                <button id="openExternalBtn" onclick="openExternal()" style="display: none;">Abrir en nueva pestaña</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de contenido
+        const content = {
+            pdfs: [
+                {
+                    name: 'Departamento de Adecuaciones',
+                    url: 'https://drive.google.com/file/d/1JSwZGojxjGZWOkPPapa8p6-0X-wDJ_WO/view?usp=sharing',
+                    type: 'pdf'
+                },
+                {
+                    name: 'Rol de Confirmador',
+                    url: 'https://drive.google.com/file/d/1xa9yR0Ns17MTUmw_f9iHTPB9RLzq9Iq4/view?usp=sharing',
+                    type: 'pdf'
+                },
+                {
+                    name: 'Rol de Coordinador',
+                    url: 'https://drive.google.com/file/d/1-kGJrIlOPsKGmKGwjACUZESWrV3uhzeV/view?usp=sharing',
+                    type: 'pdf'
+                },
+                {
+                    name: 'Rol de Solicitante',
+                    url: 'https://drive.google.com/file/d/1xfRe1J6dqd147QJRNkL04BYbHRNG0VZ6/view?usp=sharing',
+                    type: 'pdf'
+                },
+                {
+                    name: 'Rol de Supervisor',
+                    url: 'https://drive.google.com/file/d/1y5sZhrK8SVLIa1gV_2_upts1ptMV-trx/view?usp=sharing',
+                    type: 'pdf'
+                },
+                {
+                    name: 'Traslado de Equipo',
+                    url: 'https://drive.google.com/file/d/1savCTptvlm-IhcFK4KtVCMFgSuU25A3f/view?usp=sharing',
+                    type: 'pdf'
+                }
+            ],
+            images: [
+                {
+                    name: 'Uso del campo cliente y coordinación nocturna',
+                    url: 'https://lh3.googleusercontent.com/d/1acu0EHwkThMZpd6M5ZK1RQ33dicDBFem',
+                    type: 'image'
+                },
+                {
+                    name: 'Cambios del proceso de confirmación',
+                    url: 'https://lh3.googleusercontent.com/d/1V9piIySw0bB_aiGgnHE5n27p-2cCXsFo',
+                    type: 'image'
+                },
+                {
+                    name: 'Factibilidades de paquetizados',
+                    url: 'https://lh3.googleusercontent.com/d/1t4iydB-dYhaMvpEzb9xDXfO3F59kufSx',
+                    type: 'image'
+                },
+                {
+                    name: 'Paquetes de MW',
+                    url: 'https://lh3.googleusercontent.com/d/13ldqyEAN-wRhbHOHeR6G0SZjrd-NUWmq',
+                    type: 'image'
+                },
+                {
+                    name: '¿Que clientes no atiende Empresarial?',
+                    url: 'https://lh3.googleusercontent.com/d/1_IGzKBM_D5mtSekCe8gJ_5RBG-zGMOGF',
+                    type: 'image'
+                }
+            ]
+        };
+        
+        // Variables globales
+        let allItems = [];
+        let currentIndex = -1;
+        let currentType = null;
+        let imageScale = 1;
+        let pdfScale = 1.0;
+        let isDragging = false;
+        let startPos = { x: 0, y: 0 };
+        let currentPos = { x: 0, y: 0 };
+        let isImageZoomed = false;
+        
+        // Elementos DOM
+        const sidebar = document.getElementById('sidebar');
+        const pdfContainer = document.getElementById('pdfContainer');
+        const imageContainer = document.getElementById('imageContainer');
+        const pdfFrame = document.getElementById('pdfFrame');
+        const currentImage = document.getElementById('currentImage');
+        const imageWrapper = document.getElementById('imageWrapper');
+        const currentIndexElement = document.getElementById('currentIndex');
+        const totalItemsElement = document.getElementById('totalItems');
+        const currentTypeElement = document.getElementById('currentType');
+        const zoomLevelElement = document.getElementById('zoomLevel');
+        const openExternalBtn = document.getElementById('openExternalBtn');
+        
+        // Función para convertir URL de Google Drive a formato de visualización directa
+        function getDirectViewerUrl(driveUrl) {
+            const match = driveUrl.match(/[-\w]{25,}/);
+            if (match && match[0]) {
+                const fileId = match[0];
+                return `https://drive.google.com/file/d/${fileId}/preview`;
+            }
+            return driveUrl;
+        }
+        
+        // Inicialización
+        function initialize() {
+            // Combinar todos los elementos
+            allItems = [...content.pdfs, ...content.images];
+            totalItemsElement.textContent = allItems.length;
+            
+            generateSidebar();
+            setupImageEvents();
+            
+            // Seleccionar el primer elemento por defecto
+            if (allItems.length > 0) {
+                selectItem(0);
+            }
+        }
+        
+        // Generar sidebar con categorías
+        function generateSidebar() {
+            // Sección de PDFs
+            if (content.pdfs.length > 0) {
+                const pdfHeader = document.createElement('div');
+                pdfHeader.className = 'category-header';
+                pdfHeader.textContent = 'MANUALES Y DOCUMENTOS';
+                sidebar.appendChild(pdfHeader);
+                
+                content.pdfs.forEach((item, index) => {
+                    const globalIndex = index;
+                    const button = createItemButton(item, globalIndex);
+                    sidebar.appendChild(button);
+                });
+            }
+            
+            // Sección de Imágenes
+            if (content.images.length > 0) {
+                const imgHeader = document.createElement('div');
+                imgHeader.className = 'category-header';
+                imgHeader.textContent = 'CONFIRMACIONES';
+                sidebar.appendChild(imgHeader);
+                
+                content.images.forEach((item, index) => {
+                    const globalIndex = content.pdfs.length + index;
+                    const button = createItemButton(item, globalIndex);
+                    sidebar.appendChild(button);
+                });
+            }
+        }
+        
+        // Crear botón para elemento
+        function createItemButton(item, globalIndex) {
+            const button = document.createElement('div');
+            button.className = 'item-button';
+            button.onclick = () => selectItem(globalIndex);
+            button.setAttribute('data-index', globalIndex);
+            
+            const icon = document.createElement('div');
+            icon.className = item.type === 'pdf' ? 'pdf-icon' : 'img-icon';
+            icon.textContent = item.type === 'pdf' ? 'PDF' : 'IMG';
+            
+            const label = document.createElement('div');
+            label.textContent = item.name;
+            label.style.flex = '1';
+            
+            button.appendChild(icon);
+            button.appendChild(label);
+            
+            return button;
+        }
+        
+        // Seleccionar elemento
+        function selectItem(index) {
+            if (index < 0 || index >= allItems.length) return;
+            
+            currentIndex = index;
+            const item = allItems[index];
+            currentType = item.type;
+            
+            // Actualizar UI
+            updateActiveButton();
+            currentIndexElement.textContent = index + 1;
+            currentTypeElement.textContent = item.type === 'pdf' ? 'PDF' : 'IMAGEN';
+            
+            // Mostrar contenido apropiado
+            if (item.type === 'pdf') {
+                showPdf(item);
+            } else {
+                showImage(item);
+            }
+            
+            resetZoom();
+        }
+        
+        // Actualizar botón activo
+        function updateActiveButton() {
+            document.querySelectorAll('.item-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = document.querySelector(`.item-button[data-index="${currentIndex}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
+        }
+        
+        // Mostrar PDF
+        function showPdf(item) {
+            pdfContainer.style.display = 'block';
+            imageContainer.style.display = 'none';
+            openExternalBtn.style.display = 'inline-block';
+            
+            const pdfUrl = getDirectViewerUrl(item.url);
+            pdfFrame.src = pdfUrl;
+            pdfFrame.dataset.originalUrl = item.url;
+        }
+        
+        // Mostrar imagen
+        function showImage(item) {
+            pdfContainer.style.display = 'none';
+            imageContainer.style.display = 'flex';
+            imageContainer.classList.add('active');
+            openExternalBtn.style.display = 'none';
+            
+            currentImage.src = item.url;
+        }
+        
+        // Configurar eventos para imágenes
+        function setupImageEvents() {
+            // Evento de clic para zoom
+            imageContainer.addEventListener('click', function(e) {
+                if (currentType === 'image' && !isImageZoomed) {
+                    zoomImageAt(e.clientX, e.clientY, 2);
+                }
+            });
+            
+            // Eventos para arrastrar
+            imageContainer.addEventListener('mousedown', function(e) {
+                if (currentType === 'image' && imageScale > 1) {
+                    isDragging = true;
+                    startPos = {
+                        x: e.clientX - currentPos.x,
+                        y: e.clientY - currentPos.y
+                    };
+                    imageContainer.classList.add('zoomed');
+                }
+            });
+            
+            document.addEventListener('mousemove', function(e) {
+                if (isDragging && currentType === 'image') {
+                    e.preventDefault();
+                    currentPos = {
+                        x: e.clientX - startPos.x,
+                        y: e.clientY - startPos.y
+                    };
+                    updateImagePosition();
+                }
+            });
+            
+            document.addEventListener('mouseup', function() {
+                isDragging = false;
+            });
+            
+            // Zoom con rueda del ratón
+            imageContainer.addEventListener('wheel', function(e) {
+                if (currentType === 'image') {
+                    e.preventDefault();
+                    
+                    if (e.deltaY < 0) {
+                        zoomImageAt(e.clientX, e.clientY, imageScale * 1.1);
+                    } else {
+                        zoomImageAt(e.clientX, e.clientY, imageScale / 1.1);
+                    }
+                }
+            });
+        }
+        
+        // Zoom de imagen en punto específico
+        function zoomImageAt(clientX, clientY, newScale) {
+            newScale = Math.max(1, Math.min(5, newScale));
+            
+            if (newScale === 1) {
+                resetImageZoom();
+                return;
+            }
+            
+            const rect = imageContainer.getBoundingClientRect();
+            const mouseX = clientX - rect.left;
+            const mouseY = clientY - rect.top;
+            
+            const percentX = mouseX / rect.width;
+            const percentY = mouseY / rect.height;
+            
+            imageScale = newScale;
+            isImageZoomed = imageScale > 1;
+            
+            currentImage.style.transform = `scale(${imageScale})`;
+            
+            if (isImageZoomed) {
+                imageContainer.classList.add('zoomed');
+                
+                const scaledWidth = rect.width * imageScale;
+                const scaledHeight = rect.height * imageScale;
+                
+                const maxX = (scaledWidth - rect.width) / 2;
+                const maxY = (scaledHeight - rect.height) / 2;
+                
+                const offsetX = (percentX - 0.5) * (scaledWidth - rect.width);
+                const offsetY = (percentY - 0.5) * (scaledHeight - rect.height);
+                
+                currentPos.x = Math.max(-maxX, Math.min(maxX, -offsetX));
+                currentPos.y = Math.max(-maxY, Math.min(maxY, -offsetY));
+            } else {
+                imageContainer.classList.remove('zoomed');
+                currentPos = { x: 0, y: 0 };
+            }
+            
+            updateImagePosition();
+            updateZoomLevel();
+        }
+        
+        // Actualizar posición de imagen
+        function updateImagePosition() {
+            imageWrapper.style.transform = `translate(${currentPos.x}px, ${currentPos.y}px)`;
+        }
+        
+        // Reset zoom de imagen
+        function resetImageZoom() {
+            imageScale = 1;
+            isImageZoomed = false;
+            currentPos = { x: 0, y: 0 };
+            currentImage.style.transform = '';
+            imageWrapper.style.transform = '';
+            imageContainer.classList.remove('zoomed');
+        }
+        
+        // Funciones de zoom unificadas
+        function zoomIn() {
+            if (currentType === 'pdf') {
+                if (pdfScale < 3.0) {
+                    pdfScale += 0.25;
+                    updatePdfZoom();
+                }
+            } else if (currentType === 'image') {
+                const rect = imageContainer.getBoundingClientRect();
+                zoomImageAt(
+                    rect.left + rect.width / 2,
+                    rect.top + rect.height / 2,
+                    imageScale * 1.5
+                );
+            }
+        }
+        
+        function zoomOut() {
+            if (currentType === 'pdf') {
+                if (pdfScale > 0.5) {
+                    pdfScale -= 0.25;
+                    updatePdfZoom();
+                }
+            } else if (currentType === 'image') {
+                const rect = imageContainer.getBoundingClientRect();
+                zoomImageAt(
+                    rect.left + rect.width / 2,
+                    rect.top + rect.height / 2,
+                    imageScale / 1.5
+                );
+            }
+        }
+        
+        function resetZoom() {
+            if (currentType === 'pdf') {
+                pdfScale = 1.0;
+                updatePdfZoom();
+            } else if (currentType === 'image') {
+                resetImageZoom();
+                updateZoomLevel();
+            }
+        }
+        
+        // Actualizar zoom de PDF
+        function updatePdfZoom() {
+            pdfFrame.style.transform = `scale(${pdfScale})`;
+            pdfFrame.style.transformOrigin = "top left";
+            
+            if (pdfScale > 1) {
+                pdfFrame.style.width = `${100/pdfScale}%`;
+                pdfFrame.style.height = `${100/pdfScale}%`;
+            } else {
+                pdfFrame.style.width = "100%";
+                pdfFrame.style.height = "100%";
+            }
+            
+            updateZoomLevel();
+        }
+        
+        // Actualizar indicador de zoom
+        function updateZoomLevel() {
+            const currentScale = currentType === 'pdf' ? pdfScale : imageScale;
+            zoomLevelElement.textContent = `${Math.round(currentScale * 100)}%`;
+        }
+        
+        // Abrir en nueva pestaña
+        function openExternal() {
+            if (currentType === 'pdf' && pdfFrame.dataset.originalUrl) {
+                window.open(pdfFrame.dataset.originalUrl, '_blank');
+            }
+        }
+        
+        // Navegación con teclado
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowLeft') {
+                if (currentIndex > 0) {
+                    selectItem(currentIndex - 1);
+                }
+            } else if (event.key === 'ArrowRight') {
+                if (currentIndex < allItems.length - 1) {
+                    selectItem(currentIndex + 1);
+                }
+            } else if (event.key === '+' || event.key === '=') {
+                zoomIn();
+            } else if (event.key === '-') {
+                zoomOut();
+            } else if (event.key === '0') {
+                resetZoom();
+            }
+        });
+        
+        // Inicializar cuando se carga la página
+        window.onload = initialize;
+    </script>
+</body>
+</html>
