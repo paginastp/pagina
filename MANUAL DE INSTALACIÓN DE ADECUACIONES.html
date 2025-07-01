@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TICKETS POST VENTA</title>
+    <title>MANUAL DE INSTALACIÓN DE ADECUACIONES</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -26,7 +26,7 @@
             display: flex;
         }
         .sidebar {
-            width: 180px;
+            width: 220px;
             background-color: #f8f8f8;
             border-right: 1px solid #ddd;
             padding: 10px;
@@ -137,8 +137,8 @@
     </style>
 </head>
 <body>
-    <h1>TICKETS POST VENTA</h1>
-    <p class="instructions">Haz clic en los documentos del menú lateral para visualizarlos. Usa los controles para hacer zoom. Si no ve el pdf, espere un momento ya que los documentos estan alojados en  la plataforma y necesitan cargar.</p>
+    <h1>MANUAL DE INSTALACIÓN DE ADECUACIONES</h1>
+    <p class="instructions">Haz clic en los documentos del menú lateral para visualizarlos. Usa los controles para hacer zoom. Si no ve el pdf, espere un momento ya que los documentos están alojados en la plataforma y necesitan cargar.</p>
     
     <div class="pdf-viewer">
         <div class="sidebar" id="pdfSidebar">
@@ -178,9 +178,19 @@
             return driveUrl;
         }
         
-        // Array con las URLs de tus PDFs
+        // Array con las URLs de tus PDFs (actualizados con los nuevos enlaces)
         const pdfs = [
-            getDirectViewerUrl("https://drive.google.com/file/d/18sNl6BFdDDpXdoBwn9mMEhjEk_AJvK5D/view?usp=sharing")
+            getDirectViewerUrl("https://drive.google.com/file/d/1yruYBOorY-eU6PY3aDt0fuH5YnFauHWw/view?usp=sharing"),
+        ];
+        
+        // Array con los URLs originales para abrir en nueva pestaña
+        const originalUrls = [
+            "https://drive.google.com/file/d/1yruYBOorY-eU6PY3aDt0fuH5YnFauHWw/view?usp=sharing"
+        ];
+        
+        // Nombres de los documentos
+        const docNames = [
+            'GUÍA DE INSTALACIÓN DE ADECUACIONES',
         ];
         
         let currentIndex = 0;
@@ -217,8 +227,6 @@
                 icon.textContent = 'PDF';
                 
                 const label = document.createElement('div');
-                // Puedes personalizar los nombres de los documentos aquí
-                const docNames = ['Manual de Tickets Post Venta'];
                 label.textContent = docNames[index] || `Documento ${index + 1}`;
                 
                 button.appendChild(icon);
@@ -286,8 +294,7 @@
         
         // Abrir PDF en una nueva pestaña
         function openExternalPdf() {
-            const originalUrl = "https://drive.google.com/file/d/18sNl6BFdDDpXdoBwn9mMEhjEk_AJvK5D/view?usp=sharing";
-            window.open(originalUrl, '_blank');
+            window.open(originalUrls[currentIndex], '_blank');
         }
         
         // Agregar navegación con teclado
